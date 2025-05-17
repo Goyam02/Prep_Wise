@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Mona_Sans } from "next/font/google";
 import "./globals.css";
+import {Toaster} from "sonner";
+import React from "react";
 
 const monaSans = Mona_Sans({
   variable: "--font-mona-sans",
@@ -8,7 +10,7 @@ const monaSans = Mona_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Prep Wise",
+  title: "Prep.AI",
   description: "An AI powered interview preparation platform",
 };
 
@@ -23,6 +25,8 @@ export default function RootLayout({
         className={`${monaSans.className} antialiased pattern`}
       >
         {children}
+
+      <Toaster/>
       </body>
     </html>
   );
