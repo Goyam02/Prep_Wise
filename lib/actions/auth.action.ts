@@ -27,7 +27,7 @@ export async function signUp(params: SignUpParams) {
 
     try {
         // check if user exists in db
-        const userRecord = await db.collection("users").doc(uid).get();
+        const userRecord = await db().collection("users").doc(uid).get();
         if (userRecord.exists)
             return {
                 success: false,
@@ -35,7 +35,7 @@ export async function signUp(params: SignUpParams) {
             };
 
         // save user to db
-        await db.collection("users").doc(uid).set({
+        await db().collection("users").doc(uid).set({
             name,
             email,
             // profileURL,
@@ -106,10 +106,7 @@ export async function getCurrentUser(): Promise<User | null> {
         const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
 
         // get user info from db
-        const userRecord = await db
-            .collection("users")
-            .doc(decodedClaims.uid)
-            .get();
+        const userRecord = await db().collection("users").doc(decodedClaims.uid).get();
         if (!userRecord.exists) return null;
 
         return {
@@ -128,6 +125,4 @@ export async function isAuthenticated() {
     const user = await getCurrentUser();
     return !!user;
 }
-
-
 
