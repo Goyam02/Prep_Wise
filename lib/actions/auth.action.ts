@@ -1,6 +1,8 @@
 'use server';
 import {db,auth} from "@/firebase/admin";
+import { CollectionReference, DocumentData, Query } from "firebase-admin/firestore";
 import {cookies} from "next/headers"
+
 
 
 const OneWeek = 60 * 60 * 24 * 7 ;
@@ -124,5 +126,36 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function isAuthenticated() {
     const user = await getCurrentUser();
     return !!user;
+}
+
+export async function getInterviewByUserId(userId: string): Promise<Interview[] | null> {
+    const interviewsRef: CollectionReference<DocumentData> = db().collection('interviews');
+    const query: Query<DocumentData> = interviewsRef
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc');
+    
+    const interviews = await query.get();
+    
+    return interviews.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    })) as Interview[];
+}
+
+export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<Interview[] | null> {
+    const { userId, limit = 20 } = params;
+    const interviewsRef: CollectionReference<DocumentData> = db().collection('interviews');
+    const query: Query<DocumentData> = interviewsRef
+        .where('finalized', '==', true)
+        .where('userId', '!=', userId)
+        .orderBy('createdAt', 'desc')
+        .limit(limit);
+    
+    const interviews = await query.get();
+    
+    return interviews.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    })) as Interview[];
 }
 
