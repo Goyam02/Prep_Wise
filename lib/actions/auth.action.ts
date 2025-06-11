@@ -1,8 +1,6 @@
 'use server';
 import {db,auth} from "@/firebase/admin";
-import { CollectionReference, DocumentData, Query } from "firebase-admin/firestore";
 import {cookies} from "next/headers"
-
 
 
 const OneWeek = 60 * 60 * 24 * 7 ;
@@ -142,50 +140,6 @@ export async function isAuthenticated() {
 //     })) as Interview[];
 // }
 
-export async function getInterviewsByUserId(userId: string): Promise<Interview[]> {
-    const interviewsRef: CollectionReference<DocumentData, DocumentData> = db.collection('interviews');
-    
-    const query: Query<DocumentData, DocumentData> = interviewsRef
-        .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc');
-
-    const snapshot = await query.get();
-
-    const interviews: Interview[] = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Interview, 'id'>)
-    }));
-
-    return interviews;
-}
-
-
-type GetLatestInterviewsParams = {
-    userId: string;
-    limit?: number;
-};
-
-export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<Interview[]> {
-    const { userId, limit = 20 } = params;
-    const interviewsRef: CollectionReference<DocumentData, DocumentData> = db.collection('interviews');
-    
-    const query: Query<DocumentData, DocumentData> = interviewsRef
-        .where('finalized', '==', true)
-        .orderBy('createdAt', 'desc')
-        .limit(limit * 2); // Fetch more to allow for filtering
-
-    const snapshot = await query.get();
-    
-    const filteredInterviews: Interview[] = snapshot.docs
-        .map(doc => ({
-            id: doc.id,
-            ...(doc.data() as Omit<Interview, 'id'>)
-        }))
-        .filter(interview => interview.userId !== userId)
-        .slice(0, limit);
-
-    return filteredInterviews;
-}
 
 // export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<Interview[]> {
 //     const { userId, limit = 20 } = params;
