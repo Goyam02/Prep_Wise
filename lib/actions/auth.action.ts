@@ -29,7 +29,7 @@ export async function signUp(params: SignUpParams) {
 
     try {
         // check if user exists in db
-        const userRecord = await db().collection("users").doc(uid).get();
+        const userRecord = await db.collection("users").doc(uid).get();
         if (userRecord.exists)
             return {
                 success: false,
@@ -37,7 +37,7 @@ export async function signUp(params: SignUpParams) {
             };
 
         // save user to db
-        await db().collection("users").doc(uid).set({
+        await db.collection("users").doc(uid).set({
             name,
             email,
             // profileURL,
@@ -108,7 +108,7 @@ export async function getCurrentUser(): Promise<User | null> {
         const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
 
         // get user info from db
-        const userRecord = await db().collection("users").doc(decodedClaims.uid).get();
+        const userRecord = await db.collection("users").doc(decodedClaims.uid).get();
         if (!userRecord.exists) return null;
 
         return {
@@ -128,34 +128,84 @@ export async function isAuthenticated() {
     return !!user;
 }
 
-export async function getInterviewByUserId(userId: string): Promise<Interview[] | null> {
-    const interviewsRef: CollectionReference<DocumentData> = db().collection('interviews');
-    const query: Query<DocumentData> = interviewsRef
+// export async function getInterviewsByUserId(userId: string): Promise<Interview[] | null> {
+//     const interviewsRef: CollectionReference<DocumentData, DocumentData> = db.collection('interviews');
+//     const query: Query<DocumentData> = interviewsRef
+//         .where('userId', '==', userId)
+//         .orderBy('createdAt', 'desc');
+    
+//     const interviews = await query.get();
+    
+//     return interviews.docs.map(doc => ({
+//         id: doc.id,
+//         ...doc.data()
+//     })) as Interview[];
+// }
+
+export async function getInterviewsByUserId(userId: string): Promise<Interview[]> {
+    const interviewsRef: CollectionReference<DocumentData, DocumentData> = db.collection('interviews');
+    
+    const query: Query<DocumentData, DocumentData> = interviewsRef
         .where('userId', '==', userId)
         .orderBy('createdAt', 'desc');
-    
-    const interviews = await query.get();
-    
-    return interviews.docs.map(doc => ({
+
+    const snapshot = await query.get();
+
+    const interviews: Interview[] = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
-    })) as Interview[];
+        ...(doc.data() as Omit<Interview, 'id'>)
+    }));
+
+    return interviews;
 }
 
-export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<Interview[] | null> {
+
+type GetLatestInterviewsParams = {
+    userId: string;
+    limit?: number;
+};
+
+export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<Interview[]> {
     const { userId, limit = 20 } = params;
-    const interviewsRef: CollectionReference<DocumentData> = db().collection('interviews');
-    const query: Query<DocumentData> = interviewsRef
+    const interviewsRef: CollectionReference<DocumentData, DocumentData> = db.collection('interviews');
+    
+    const query: Query<DocumentData, DocumentData> = interviewsRef
         .where('finalized', '==', true)
-        .where('userId', '!=', userId)
         .orderBy('createdAt', 'desc')
-        .limit(limit);
+        .limit(limit * 2); // Fetch more to allow for filtering
+
+    const snapshot = await query.get();
     
-    const interviews = await query.get();
-    
-    return interviews.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    })) as Interview[];
+    const filteredInterviews: Interview[] = snapshot.docs
+        .map(doc => ({
+            id: doc.id,
+            ...(doc.data() as Omit<Interview, 'id'>)
+        }))
+        .filter(interview => interview.userId !== userId)
+        .slice(0, limit);
+
+    return filteredInterviews;
 }
 
+// export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<Interview[]> {
+//     const { userId, limit = 20 } = params;
+
+//     const interviewsRef: CollectionReference<DocumentData> = db.collection('interviews');
+
+//     // Avoid using '!=' directly if possible — fallback to client-side filtering
+//     const query: Query<DocumentData> = interviewsRef
+//         .where('finalized', '==', true)
+//         .orderBy('createdAt', 'desc')
+//         .limit(limit); 
+
+//     const snapshot = await query.get();
+
+//     const filteredInterviews: Interview[] = snapshot.docs
+//         .map(doc => ({
+//             id: doc.id,
+//             ...(doc.data() as Omit<Interview, 'id'>)
+//         }))
+//         .filter(interview => interview.userId !== userId)
+
+//     return filteredInterviews;
+// }

@@ -18,7 +18,7 @@ const initFirebaseAdmin = () => {
 
     return {
         auth: getAuth(),
-        db:getFirestore
+        db:getFirestore(),
     }
 
 }
