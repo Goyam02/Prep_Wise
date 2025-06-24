@@ -35,12 +35,6 @@ Whether you're preparing for your next tech job or just want to boost your commu
 
 ---
 
-## 📸 Screenshots
-
-> _Add screenshots of the voice interview in action, the feedback page, and UI here._
-
----
-
 ## 🧱 Tech Stack
 
 | Technology       | Purpose                                 |
